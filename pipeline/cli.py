@@ -20,26 +20,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Classify a roommate story → dialogue transcript + pillow fight image",
     )
 
-    # Story input — either direct text or Reddit
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--title", help="Story title / situation (skips Reddit)")
     source.add_argument("--subreddit", help="Subreddit to scrape (without r/ prefix)")
 
     parser.add_argument("--body", default="", help="Story body text (used with --title)")
-
-    # Reddit-only options
     parser.add_argument("--sort", choices=["hot", "new", "top", "rising"], default="hot")
     parser.add_argument("--limit", type=int, default=10, help="Posts to fetch (default: 10)")
-    parser.add_argument("--post-id", help="Process a single specific post ID")
-
-    # Shared options
-    parser.add_argument(
-        "--vs-persona",
-        help="Persona code for the opponent roommate (e.g. CODF). "
-             "Defaults to the natural opposite of the classified persona.",
-    )
+    parser.add_argument("--post-id", help="Process a single specific Reddit post ID")
+    parser.add_argument("--vs-persona", help="Opponent persona code (e.g. CODF)")
     parser.add_argument("--output", type=Path, default=Path("output"))
-    parser.add_argument("--no-image", action="store_true", help="Skip image generation")
+    parser.add_argument("--image", action="store_true", help="Generate pillow fight image (gpt-image-1)")
     parser.add_argument("--tts", action="store_true", help="Render transcript to MP3 via ElevenLabs")
 
     return parser.parse_args(argv)
@@ -50,7 +41,6 @@ _OPPOSITES: dict[str, str] = {
     "NODS": "CPHF", "NODF": "CPHS", "NOHS": "CPDF", "NOHF": "CPDS",
     "CPDS": "NOHF", "CPDF": "NOHS", "CPHS": "NODF", "CPHF": "NODS",
     "CODS": "NPHF", "CODF": "NPHS", "COHS": "NPDF", "COHF": "NPDS",
-    # v1 codes
     "NPSD": "COFL", "NPSL": "COFD", "NPFD": "COSL", "NPFL": "COSD",
     "NOSD": "CPFL", "NOSL": "CPFD", "NOFD": "CPSL", "NOFL": "CPSD",
     "CPSD": "NOFL", "CPSL": "NOFD", "CPFD": "NOSL", "CPFL": "NOSD",
@@ -58,38 +48,52 @@ _OPPOSITES: dict[str, str] = {
 }
 
 
-def _run_story(args: argparse.Namespace, client: OpenAI) -> None:
-    title = args.title
-    body = args.body or ""
-    slug = title[:40].lower().replace(" ", "-").replace("/", "-")
+def _print_transcript(transcript) -> None:
+    print()
+    for line in transcript.lines:
+        label = f"{line.speaker} [{line.persona_code} — {line.persona_title}]"
+        print(f"  {label}")
+        print(f"    {line.text}")
+    print()
 
-    print(f"\n--- {title[:80]} ---")
+
+def _process(
+    title: str,
+    body: str,
+    permalink: str | None,
+    out_dir: Path,
+    args: argparse.Namespace,
+    client: OpenAI,
+) -> None:
+    print(f"\n{'─' * 60}")
+    print(f"  {title}")
+    if permalink:
+        print(f"  {permalink}")
+    print(f"{'─' * 60}")
+
     print("Classifying persona...", end=" ", flush=True)
     classification = classify_post(title, body, [], client=client)
-    print(f"{classification.code} — {classification.meta.tagline}")
+    vs = args.vs_persona or _OPPOSITES.get(classification.code, "CODF")
+    print(f"{classification.code} ({classification.meta.title}) vs {vs}")
     print(f"  {classification.reasoning}")
 
-    vs = args.vs_persona or _OPPOSITES.get(classification.code, "CODF")
-    print(f"Generating transcript ({classification.code} vs {vs})...", end=" ", flush=True)
+    print("Generating transcript...", end=" ", flush=True)
     transcript = generate_transcript(title, body, classification, vs, client=client)
     print("done")
 
-    out_dir = args.output / slug
-    out_dir.mkdir(parents=True, exist_ok=True)
+    _print_transcript(transcript)
 
+    out_dir.mkdir(parents=True, exist_ok=True)
     transcript_path = out_dir / "transcript.json"
     transcript.save(transcript_path)
-    print(f"  Transcript → {transcript_path}")
-
-    if args.tts:
-        audio_path = out_dir / "dialogue.mp3"
-        print("Rendering audio via ElevenLabs...")
-        render_transcript(transcript, audio_path)
-        print(f"  Audio → {audio_path}")
+    print(f"  Saved → {transcript_path}")
+    print()
+    print(transcript.to_json())
 
     (out_dir / "meta.json").write_text(
         json.dumps({
             "title": title,
+            "permalink": permalink,
             "persona": classification.code,
             "persona_title": classification.meta.title,
             "vs_persona": vs,
@@ -98,72 +102,52 @@ def _run_story(args: argparse.Namespace, client: OpenAI) -> None:
         encoding="utf-8",
     )
 
-    if not args.no_image:
-        image_path = out_dir / f"pillow_fight_{classification.code}_vs_{vs}.png"
-        print(f"Generating pillow fight ({classification.code} vs {vs})...", end=" ", flush=True)
+    if args.tts:
+        audio_path = out_dir / "dialogue.mp3"
+        print("Rendering audio via ElevenLabs...")
+        render_transcript(transcript, audio_path)
+        print(f"  Audio → {audio_path}")
+
+    if args.image:
+        fight_name = f"pillow_fight_{classification.code}_vs_{vs}"
+        image_path = Path("animal_images") / fight_name / f"{fight_name}.png"
+        print(f"Generating pillow fight image...", end=" ", flush=True)
         generate_pillow_fight_image(classification.code, vs, image_path, client=client)
         print(f"done → {image_path}")
 
 
-def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
-    from reddit_scraper.scraper import create_reddit_instance, fetch_comments, fetch_posts
+def _run_story(args: argparse.Namespace, client: OpenAI) -> None:
+    title = args.title
+    body = args.body or ""
+    slug = title[:40].lower().replace(" ", "-").replace("/", "-")
+    _process(title, body, None, args.output / slug, args, client)
 
-    try:
-        reddit = create_reddit_instance()
-    except ValueError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+
+def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
+    from reddit_scraper.scraper import fetch_comments, fetch_posts, fetch_post_selftext
+
+    print(f"Fetching r/{args.subreddit} ({args.sort}, limit={args.limit})...")
+    posts = fetch_posts(args.subreddit, sort=args.sort, limit=args.limit)
 
     if args.post_id:
-        posts = fetch_posts(reddit, args.subreddit, limit=1)
         posts = [p for p in posts if p.post_id == args.post_id] or posts[:1]
-    else:
-        posts = fetch_posts(reddit, args.subreddit, sort=args.sort, limit=args.limit)
 
     if not posts:
         print("No posts found.", file=sys.stderr)
         sys.exit(1)
 
+    print(f"Found {len(posts)} posts.\n")
+
     for post in posts:
-        print(f"\n--- {post.title[:80]} ---")
-
-        comments = fetch_comments(reddit, post.post_id, args.subreddit)
-        top_comments = [c.body for c in sorted(comments, key=lambda c: -c.score)[:8]]
-
-        print("Classifying persona...", end=" ", flush=True)
-        classification = classify_post(post.title, post.selftext, top_comments, client=client)
-        print(f"{classification.code} — {classification.meta.tagline}")
-        print(f"  {classification.reasoning}")
-
-        vs = args.vs_persona or _OPPOSITES.get(classification.code, "CODF")
-        print(f"Generating transcript ({classification.code} vs {vs})...", end=" ", flush=True)
-        transcript = generate_transcript(post.title, post.selftext, classification, vs, client=client)
-        print("done")
-
-        out_dir = args.output / post.post_id
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        transcript.save(out_dir / "transcript.json")
-        print(f"  Transcript → {out_dir}/transcript.json")
-
-        (out_dir / "meta.json").write_text(
-            json.dumps({
-                "post_id": post.post_id,
-                "title": post.title,
-                "persona": classification.code,
-                "persona_title": classification.meta.title,
-                "vs_persona": vs,
-                "reasoning": classification.reasoning,
-                "permalink": post.permalink,
-            }, indent=2),
-            encoding="utf-8",
+        body = fetch_post_selftext(post.permalink) if not post.selftext else post.selftext
+        _process(
+            post.title,
+            body,
+            post.permalink,
+            args.output / post.post_id,
+            args,
+            client,
         )
-
-        if not args.no_image:
-            image_path = out_dir / f"pillow_fight_{classification.code}_vs_{vs}.png"
-            print(f"Generating pillow fight ({classification.code} vs {vs})...", end=" ", flush=True)
-            generate_pillow_fight_image(classification.code, vs, image_path, client=client)
-            print(f"done → {image_path}")
 
 
 def main(argv: list[str] | None = None) -> None:
