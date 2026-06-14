@@ -9,9 +9,9 @@ from .personas import PERSONAS, PersonaMeta
 
 AVATARS_DIR = Path(__file__).parent.parent / "avatars"
 
-CARD_W = 480
-CARD_H = 580
-RADIUS = 48
+CARD_W = 400
+CARD_H = 520
+RADIUS = 40
 FONT_PATH_BOLD = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 FONT_PATH = "/System/Library/Fonts/Supplemental/Arial.ttf"
 
@@ -61,44 +61,49 @@ def generate_card(persona_code: str, output_path: Path) -> Path:
     draw = ImageDraw.Draw(card)
 
     try:
-        font_sm   = ImageFont.truetype(FONT_PATH, 18)
-        font_code = ImageFont.truetype(FONT_PATH_BOLD, 56)
-        font_title = ImageFont.truetype(FONT_PATH_BOLD, 26)
-        font_pill = ImageFont.truetype(FONT_PATH_BOLD, 17)
+        font_hmti  = ImageFont.truetype(FONT_PATH_BOLD, 28)
+        font_code  = ImageFont.truetype(FONT_PATH_BOLD, 52)
+        font_title = ImageFont.truetype(FONT_PATH_BOLD, 22)
+        font_tag   = ImageFont.truetype(FONT_PATH, 17)
+        font_pill  = ImageFont.truetype(FONT_PATH_BOLD, 15)
     except OSError:
-        font_sm = font_code = font_title = font_pill = ImageFont.load_default()
+        font_hmti = font_code = font_title = font_tag = font_pill = ImageFont.load_default()
 
     badge_rgb = _hex(p.badge_text)
     badge_bg  = _hex(p.badge)
     accent    = _hex(p.accent)
 
-    # "HMTI" label
-    draw.text((40, 32), "HMTI", font=font_sm, fill=(*accent, 180))
+    # "HMTI" label — bigger
+    draw.text((32, 28), "HMTI", font=font_hmti, fill=(*accent, 220))
 
     # Code
-    draw.text((40, 52), persona_code, font=font_code, fill=(*badge_rgb, 255))
+    draw.text((32, 58), persona_code, font=font_code, fill=(*badge_rgb, 255))
 
     # Title
-    draw.text((40, 118), meta.title, font=font_title, fill=(30, 30, 40, 255))
+    draw.text((32, 116), meta.title, font=font_title, fill=(30, 30, 40, 255))
 
-    # Avatar — bigger
+    # Avatar
     avatar_path = AVATARS_DIR / f"{persona_code}.png"
-    avatar_y = 155
-    avatar_h = 280
+    avatar_y = 148
+    avatar_h = 220
     if avatar_path.exists():
         avatar = Image.open(avatar_path).convert("RGBA")
         avatar.thumbnail((CARD_W - 40, avatar_h), Image.LANCZOS)
         ax = (CARD_W - avatar.width) // 2
         card.paste(avatar, (ax, avatar_y), avatar)
 
+    # Tagline
+    tagline = f'"{meta.tagline}"'
+    draw.text((CARD_W // 2, avatar_y + avatar_h + 16), tagline, font=font_tag,
+              fill=(*badge_rgb, 200), anchor="mm")
+
     # Axis trait pills — one per letter of the code
-    pill_y = avatar_y + avatar_h + 18
+    pill_y = avatar_y + avatar_h + 46
     pills = [_AXIS_TRAITS[ch] for ch in persona_code if ch in _AXIS_TRAITS]
 
-    # Measure total width to centre the row
-    pill_pad_x, pill_pad_y = 18, 9
+    pill_pad_x, pill_pad_y = 14, 7
     pill_h = font_pill.size + pill_pad_y * 2
-    gaps = 10
+    gaps = 8
     widths = [int(draw.textlength(t, font=font_pill)) + pill_pad_x * 2 for t in pills]
     total_w = sum(widths) + gaps * (len(pills) - 1)
     px = (CARD_W - total_w) // 2

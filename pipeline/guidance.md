@@ -30,8 +30,10 @@ Good endings (unhinged, creative insults, loses it):
 - "I have lived with mould that had more self-awareness than you!"
 - "Congratulations — you have successfully made me consider WITNESS PROTECTION!"
 
-## No resolution
-The fight does NOT end with agreement, compromise, or a friendly note. It ends mid-argument — someone storms off, says something unhinged, or delivers a final insult. No "deal", no "fine let's talk about it", no peace made.
+## Ending: clear mic-drop, not mid-argument
+The fight ends with a definitive final line — a clear, satisfying, unhinged mic-drop that feels like a conclusion. NOT mid-argument, NOT trailing off. One person delivers a killer final blow and that's it. The listener knows it's over.
+- Bad: ends on a comeback that could keep going (no finality)
+- Good: one devastating line that shuts it all down — absurd, creative, burns the whole thing to the ground
 
 ## Audio-only: no visual references
 The audience can ONLY hear this. They cannot see anything — no characters, no room, no props.

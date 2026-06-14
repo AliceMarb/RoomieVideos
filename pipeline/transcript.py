@@ -79,7 +79,7 @@ Write the live argument. 60–75 words, ~30 seconds when read aloud.
 - The ending goes OFF THE RAILS — someone completely loses it. Creative, unhinged insults. Weird. Absurd. Real Housewives table-flip energy.
 - BAD ending: "Deal. But no pets invited." (too tidy, too friendly)
 - GOOD ending: "You're not a roommate, you're a FERAL RACCOON in a human costume!" or "I have lived with mould that had more self-awareness than you!"
-- NO RESOLUTION: the fight does NOT end with agreement or compromise. It ends mid-argument — someone storms off, delivers a final unhinged insult, or drops a mic. No "deal", no peace made.
+- CLEAR MIC-DROP ENDING: one person delivers a devastating, unhinged final line that definitively ends it. The listener knows it's over. NOT trailing off mid-argument — a clear, satisfying, burns-it-all-down finale.
 
 Return ONLY this exact JSON structure — no markdown, no explanation:
 {{"lines": [{{"speaker": "A", "text": "..."}}, {{"speaker": "B", "text": "..."}}, ...]}}"""
