@@ -8,12 +8,12 @@ Rules for generating roommate argument transcripts.
 - This is the active dispute — they are fighting RIGHT NOW, not recapping
 - NEVER address the other person by name, letter ("A", "B"), or any pronoun that implies you can see them
 
-## Tone: structure is HOOK → FIGHT → PUNCHLINE
-- LINE 1: punchy funny hook that states the problem (see below)
-- LINES 2–10: REAL ANGRY CONFLICT. People interrupting, defending themselves, escalating. Frustrated. Petty. Specific. This is NOT a comedy sketch — it's a real fight that happens to be funny because of who these two people are
-- LAST 1–2 LINES: the punchline. One killer absurd line that ends it
+## Tone: structure is ACCUSATION → ESCALATING FIGHT → UNHINGED ENDING
+- LINE 1: direct accusation (see below)
+- LINES 2–8: REAL ANGRY CONFLICT. People interrupting, defending themselves, escalating. Frustrated. Petty. Specific. Tension builds each line.
+- LAST 2–3 LINES: it goes OFF THE RAILS. Someone loses it completely. Creative, unhinged insults. Absurd mic-drop. Think Real Housewives table-flip energy. Get weird with it.
 
-The contrast between the two personalities IS the comedy. You do not need to write jokes. A neat-freak saying "I bond with a mop every day!" is still a joke — don't do that. They should say "I've cleaned that bathroom FOUR TIMES this week." That's real. That's what makes it land.
+The contrast between the two personalities IS the comedy. The middle is real conflict — don't write jokes there. Save the unhinged creativity for the ending.
 
 Bad middle lines (too jokey, kills tension):
 - "Bonding over issues is how we grow!"
@@ -24,6 +24,14 @@ Good middle lines (real conflict, personality shows through):
 - "The lease says NO PETS. I have that in writing."
 - "It's been two months. That's not a phase, that's a lifestyle."
 - "I'm not asking you to get rid of it, I'm asking you to walk it."
+
+Good endings (unhinged, creative insults, loses it):
+- "You're not a roommate, you're a FERAL RACCOON in a human costume!"
+- "I have lived with mould that had more self-awareness than you!"
+- "Congratulations — you have successfully made me consider WITNESS PROTECTION!"
+
+## No resolution
+The fight does NOT end with agreement, compromise, or a friendly note. It ends mid-argument — someone storms off, says something unhinged, or delivers a final insult. No "deal", no "fine let's talk about it", no peace made.
 
 ## Audio-only: no visual references
 The audience can ONLY hear this. They cannot see anything — no characters, no room, no props.

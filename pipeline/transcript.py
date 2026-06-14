@@ -74,12 +74,12 @@ Write the live argument. 60–75 words, ~30 seconds when read aloud.
 - NEVER use the other person's name or refer to them as "A" or "B" — speak directly without addressing them by any name
 - AUDIO ONLY: the audience cannot see anything. Every line must make sense with ears alone — no references to things only visible in the room
 - FIRST LINE must be a direct accusation: state exactly what the other person did wrong, with anger and energy. NOT a question, NOT a metaphor, NOT a joke — a clear statement of the problem. (e.g. "Your cat has turned this apartment into a BIOHAZARD and you don't even care!" not "Did a cheese factory explode in your room?")
-- Structure: HOOK (line 1) → REAL ANGRY FIGHT (lines 2–10) → PUNCHLINE (final 1–2 lines)
-- The middle must be REAL conflict — frustrated, specific, escalating. People defending themselves and saying what they actually mean. NOT jokes.
-- The personality clash between A and B IS the comedy — you do not need to write jokes in the middle. Real people fighting with clashing personalities is naturally funny.
-- BAD middle line: "I bond with a mop every day!" — that's a joke, not a real grievance
-- GOOD middle line: "I've scrubbed that bathroom four times this week because of your dog." — that's real, that's what lands
-- The FINAL line is the punchline — one absurd, killer, mic-drop moment. Save all the comedy for there.
+- Structure: ACCUSATION (line 1) → ESCALATING FIGHT (lines 2–8) → UNHINGED ENDING (final 2–3 lines)
+- The middle must be REAL conflict — frustrated, specific, escalating. NOT jokes.
+- The ending goes OFF THE RAILS — someone completely loses it. Creative, unhinged insults. Weird. Absurd. Real Housewives table-flip energy.
+- BAD ending: "Deal. But no pets invited." (too tidy, too friendly)
+- GOOD ending: "You're not a roommate, you're a FERAL RACCOON in a human costume!" or "I have lived with mould that had more self-awareness than you!"
+- NO RESOLUTION: the fight does NOT end with agreement or compromise. It ends mid-argument — someone storms off, delivers a final unhinged insult, or drops a mic. No "deal", no peace made.
 
 Return ONLY this exact JSON structure — no markdown, no explanation:
 {{"lines": [{{"speaker": "A", "text": "..."}}, {{"speaker": "B", "text": "..."}}, ...]}}"""
