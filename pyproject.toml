@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Scrape posts and comments from Reddit subreddits"
 requires-python = ">=3.10"
 dependencies = [
-    "praw>=7.7,<8",
+    "beautifulsoup4>=4.12,<5",
     "python-dotenv>=1.0,<2",
     "requests>=2.31,<3",
 ]
