@@ -31,7 +31,7 @@ class Transcript:
             {
                 "persona_a": self.persona_a,
                 "persona_b": self.persona_b,
-                "lines": [asdict(l) for l in self.lines],
+                "lines": [{"speaker": l.speaker, "text": l.text} for l in self.lines],
             },
             indent=2,
         )
@@ -74,6 +74,7 @@ Write the live argument. 60–75 words, ~30 seconds when read aloud.
 - Dramatic and funny — think reality TV confrontation energy
 - Lines are very short and snappy (1–2 sentences max), rapid fire
 - Each character's personality makes their arguing style totally different and clash hilariously
+- NEVER use the other person's name or refer to them as "A" or "B" — speak directly without addressing them by any name
 - End with a killer line, a dramatic exit, or an absurd mic-drop moment
 
 Return ONLY this exact JSON structure — no markdown, no explanation:

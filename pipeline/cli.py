@@ -41,10 +41,6 @@ _OPPOSITES: dict[str, str] = {
     "NODS": "CPHF", "NODF": "CPHS", "NOHS": "CPDF", "NOHF": "CPDS",
     "CPDS": "NOHF", "CPDF": "NOHS", "CPHS": "NODF", "CPHF": "NODS",
     "CODS": "NPHF", "CODF": "NPHS", "COHS": "NPDF", "COHF": "NPDS",
-    "NPSD": "COFL", "NPSL": "COFD", "NPFD": "COSL", "NPFL": "COSD",
-    "NOSD": "CPFL", "NOSL": "CPFD", "NOFD": "CPSL", "NOFL": "CPSD",
-    "CPSD": "NOFL", "CPSL": "NOFD", "CPFD": "NOSL", "CPFL": "NOSD",
-    "COSD": "NPFL", "COSL": "NPFD", "COFD": "NPSL", "COFL": "NPSD",
 }
 
 
@@ -109,7 +105,7 @@ def _process(
         print(f"  Audio → {audio_path}")
 
     if args.image:
-        fight_name = f"pillow_fight_{classification.code}_vs_{vs}"
+        fight_name = f"{classification.code}_vs_{vs}"
         image_path = Path("animal_images") / fight_name / f"{fight_name}.png"
         print(f"Generating pillow fight image...", end=" ", flush=True)
         generate_pillow_fight_image(classification.code, vs, image_path, client=client)
@@ -139,12 +135,39 @@ def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
     print(f"Found {len(posts)} posts.\n")
 
     for post in posts:
+        out_dir = args.output / post.post_id
+
+        transcript_path = out_dir / "transcript.json"
+        if transcript_path.exists():
+            print(f"  Skipping {post.post_id} — transcript already exists")
+            continue
+
         body = fetch_post_selftext(post.permalink) if not post.selftext else post.selftext
+        comments = fetch_comments(post.post_id, post.subreddit)
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "post.json").write_text(
+            json.dumps({
+                "post_id": post.post_id,
+                "title": post.title,
+                "author": post.author,
+                "score": post.score,
+                "permalink": post.permalink,
+                "selftext": body,
+                "comments": [
+                    {"author": c.author, "score": c.score, "body": c.body}
+                    for c in comments
+                ],
+            }, indent=2),
+            encoding="utf-8",
+        )
+        print(f"  Saved post → {out_dir / 'post.json'}")
+
         _process(
             post.title,
             body,
             post.permalink,
-            args.output / post.post_id,
+            out_dir,
             args,
             client,
         )
