@@ -22,6 +22,7 @@ image = (
         "imageio[ffmpeg]",
         "imageio-ffmpeg",
         "sentencepiece",
+        "ftfy",
         "Pillow",
         "numpy<2",
     )
