@@ -8,7 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from .classifier import classify_post
+from .classifier import classify_post, is_conflict_story
 from .image_gen import generate_pillow_fight_image
 from .transcript import generate_transcript
 from .tts import render_transcript
@@ -143,6 +143,11 @@ def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
             continue
 
         body = fetch_post_selftext(post.permalink) if not post.selftext else post.selftext
+
+        if not is_conflict_story(post.title, body, client=client):
+            print(f"  Skipping {post.post_id} — not a real conflict story")
+            continue
+
         comments = fetch_comments(post.post_id, post.subreddit)
 
         out_dir.mkdir(parents=True, exist_ok=True)

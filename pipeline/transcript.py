@@ -71,11 +71,16 @@ The situation:
 
 Write the live argument. 60–75 words, ~30 seconds when read aloud.
 - This is the active dispute — they are fighting RIGHT NOW
-- Dramatic and funny — think reality TV confrontation energy
 - Lines are very short and snappy (1–2 sentences max), rapid fire
-- Each character's personality makes their arguing style totally different and clash hilariously
 - NEVER use the other person's name or refer to them as "A" or "B" — speak directly without addressing them by any name
-- End with a killer line, a dramatic exit, or an absurd mic-drop moment
+- AUDIO ONLY: the audience cannot see anything. Every line must make sense with ears alone — no references to things only visible in the room
+- FIRST LINE must be punchy, funny, and high-energy — hook the listener immediately while making the problem crystal clear. Attitude first. (e.g. "Your dog turned my bathroom into a CRIME SCENE — again!" not "Your dog trashed the bathroom and it's never outside.")
+- Structure: HOOK (line 1) → REAL ANGRY FIGHT (lines 2–10) → PUNCHLINE (final 1–2 lines)
+- The middle must be REAL conflict — frustrated, specific, escalating. People defending themselves and saying what they actually mean. NOT jokes.
+- The personality clash between A and B IS the comedy — you do not need to write jokes in the middle. Real people fighting with clashing personalities is naturally funny.
+- BAD middle line: "I bond with a mop every day!" — that's a joke, not a real grievance
+- GOOD middle line: "I've scrubbed that bathroom four times this week because of your dog." — that's real, that's what lands
+- The FINAL line is the punchline — one absurd, killer, mic-drop moment. Save all the comedy for there.
 
 Return ONLY this exact JSON structure — no markdown, no explanation:
 {{"lines": [{{"speaker": "A", "text": "..."}}, {{"speaker": "B", "text": "..."}}, ...]}}"""
