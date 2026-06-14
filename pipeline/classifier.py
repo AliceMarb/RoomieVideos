@@ -19,7 +19,7 @@ class ClassificationResult:
         return PERSONAS[self.code]
 
 
-def is_conflict_story(title: str, selftext: str, *, client: OpenAI | None = None) -> bool:
+def is_conflict_story(title: str, story: str, *, client: OpenAI | None = None) -> bool:
     client = client or OpenAI(api_key=os.environ["OPENAI_API_KEY"])
     prompt = f"""Does this Reddit post describe a real, specific roommate conflict that actually happened to the poster?
 
@@ -32,7 +32,7 @@ Answer NO if it is:
 Answer YES only if it describes a specific real incident or ongoing conflict.
 
 Title: {title}
-Body: {selftext[:500] or "(none)"}
+Body: {story[:500] or "(none)"}
 
 Reply with only YES or NO."""
 
@@ -47,7 +47,7 @@ Reply with only YES or NO."""
 
 def classify_post(
     title: str,
-    selftext: str,
+    story: str,
     top_comments: list[str],
     *,
     client: OpenAI | None = None,
@@ -55,6 +55,8 @@ def classify_post(
     client = client or OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     comment_block = "\n".join(f"- {c}" for c in top_comments[:8]) if top_comments else "(no comments)"
+
+    full_story = (title + ". " + story).strip() if story else title
 
     prompt = f"""You are classifying the author of a Reddit roommate post into one of 16 HMTI personality types.
 
@@ -66,10 +68,8 @@ Analyze the author's voice, values, and how they describe the situation — not 
 Look at: how they handle conflict, how social they seem at home, how organized/structured they are,
 and whether they're direct or harmony-seeking.
 
-Reddit post title: {title}
-
-Post body:
-{selftext or "(no body text)"}
+Story:
+{full_story}
 
 Top comments from others:
 {comment_block}

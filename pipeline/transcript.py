@@ -42,7 +42,7 @@ class Transcript:
 
 def generate_transcript(
     title: str,
-    selftext: str,
+    story: str,
     classification: ClassificationResult,
     vs_persona: str = "CODF",
     *,
@@ -66,8 +66,7 @@ Personality: {meta_b.description}
 Conflict style: {meta_b.character_direction}
 
 The situation:
-{title}
-{selftext or ""}
+{(title + ". " + story).strip() if story else title}
 
 Write the live argument. 60–75 words, ~30 seconds when read aloud.
 - This is the active dispute — they are fighting RIGHT NOW

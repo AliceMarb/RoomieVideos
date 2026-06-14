@@ -24,7 +24,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     source.add_argument("--title", help="Story title / situation (skips Reddit)")
     source.add_argument("--subreddit", help="Subreddit to scrape (without r/ prefix)")
 
-    parser.add_argument("--body", default="", help="Story body text (used with --title)")
+    parser.add_argument("--story", default="", help="Story body text (used with --title)")
     parser.add_argument("--sort", choices=["hot", "new", "top", "rising"], default="hot")
     parser.add_argument("--limit", type=int, default=10, help="Posts to fetch (default: 10)")
     parser.add_argument("--post-id", help="Process a single specific Reddit post ID")
@@ -55,7 +55,7 @@ def _print_transcript(transcript) -> None:
 
 def _process(
     title: str,
-    body: str,
+    story: str,
     permalink: str | None,
     out_dir: Path,
     args: argparse.Namespace,
@@ -68,13 +68,13 @@ def _process(
     print(f"{'─' * 60}")
 
     print("Classifying persona...", end=" ", flush=True)
-    classification = classify_post(title, body, [], client=client)
+    classification = classify_post(title, story, [], client=client)
     vs = args.vs_persona or _OPPOSITES.get(classification.code, "CODF")
     print(f"{classification.code} ({classification.meta.title}) vs {vs}")
     print(f"  {classification.reasoning}")
 
     print("Generating transcript...", end=" ", flush=True)
-    transcript = generate_transcript(title, body, classification, vs, client=client)
+    transcript = generate_transcript(title, story, classification, vs, client=client)
     print("done")
 
     _print_transcript(transcript)
@@ -114,9 +114,9 @@ def _process(
 
 def _run_story(args: argparse.Namespace, client: OpenAI) -> None:
     title = args.title
-    body = args.body or ""
+    story = args.story or ""
     slug = title[:40].lower().replace(" ", "-").replace("/", "-")
-    _process(title, body, None, args.output / slug, args, client)
+    _process(title, story, None, args.output / slug, args, client)
 
 
 def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
@@ -142,9 +142,9 @@ def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
             print(f"  Skipping {post.post_id} — transcript already exists")
             continue
 
-        body = fetch_post_selftext(post.permalink) if not post.selftext else post.selftext
+        story = fetch_post_selftext(post.permalink) if not post.selftext else post.selftext
 
-        if not is_conflict_story(post.title, body, client=client):
+        if not is_conflict_story(post.title, story, client=client):
             print(f"  Skipping {post.post_id} — not a real conflict story")
             continue
 
@@ -158,7 +158,7 @@ def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
                 "author": post.author,
                 "score": post.score,
                 "permalink": post.permalink,
-                "selftext": body,
+                "story": story,
                 "comments": [
                     {"author": c.author, "score": c.score, "body": c.body}
                     for c in comments
@@ -168,14 +168,17 @@ def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
         )
         print(f"  Saved post → {out_dir / 'post.json'}")
 
-        _process(
-            post.title,
-            body,
-            post.permalink,
-            out_dir,
-            args,
-            client,
-        )
+        try:
+            _process(
+                post.title,
+                story,
+                post.permalink,
+                out_dir,
+                args,
+                client,
+            )
+        except Exception as exc:
+            print(f"  Error processing {post.post_id}: {exc} — skipping")
 
 
 def main(argv: list[str] | None = None) -> None:
