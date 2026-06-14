@@ -49,7 +49,6 @@ def animate(
             number_of_videos=1,
             duration_seconds=duration,
             aspect_ratio=aspect_ratio,
-            enhance_prompt=True,
         ),
     )
 
