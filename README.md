@@ -9,9 +9,11 @@ Reddit post → HMTI persona classification → 2-person dialogue transcript →
 ```
 
 **Tools used:**
-- **Reddit:** [PRAW](https://praw.readthedocs.io/) (Python Reddit API Wrapper) — official Reddit API, read-only
-- **Classification + transcript:** OpenAI `gpt-4o-mini` (classify) and `gpt-4o` (dialogue)
-- **Image generation:** OpenAI `gpt-image-1` at medium quality
+- **Reddit:** BeautifulSoup scraping of old.reddit.com (no API key needed)
+- **Classification:** OpenAI `gpt-4o-mini`
+- **Transcript:** OpenAI `gpt-4o` — 30s live argument between two personas
+- **Image:** OpenAI `gpt-image-1` medium quality, using both avatar PNGs as style references
+- **Audio:** ElevenLabs TTS, two voices stitched with pydub
 - **Avatars:** 32 HMTI persona PNGs from RoomieScout
 
 ## Setup
@@ -23,52 +25,60 @@ Reddit post → HMTI persona classification → 2-person dialogue transcript →
    pip install -r requirements.txt
    ```
 
-2. **Configure credentials** — copy `.env` and fill in the Reddit keys:
+2. **Add credentials to `.env`:**
    ```bash
-   # .env already has the OpenAI key
-   # Add your Reddit API credentials:
-   REDDIT_CLIENT_ID=...
-   REDDIT_CLIENT_SECRET=...
+   OPENAI_API_KEY=...
+   ELEVENLABS_API_KEY=...       # only needed for --tts
+   ELEVENLABS_VOICE_A=...       # voice ID for speaker A (default: George)
+   ELEVENLABS_VOICE_B=...       # voice ID for speaker B (default: Rachel)
    ```
-
-   Get Reddit credentials at https://www.reddit.com/prefs/apps — create a "script" app.
 
 ## Run the pipeline
 
 ```bash
-# Scrape r/roommatesfromhell, classify top 10 posts, generate transcripts + images
-.venv/bin/python -m pipeline roommatesfromhell --limit 10
+# From a title only (no Reddit)
+.venv/bin/python -m pipeline --title "My roommate ate my labeled leftovers and blamed the cat"
 
-# Use a specific sort
-.venv/bin/python -m pipeline roommates --sort top --time-filter week --limit 5
+# From a title + body
+.venv/bin/python -m pipeline --title "AITA for locking the fridge?" --body "My roommate keeps..."
 
-# Single post by ID
-.venv/bin/python -m pipeline roommatesfromhell --post-id abc123
+# From Reddit
+.venv/bin/python -m pipeline --subreddit roommatesfromhell --limit 5
 
-# Set the "opponent" persona manually (otherwise picks natural opposite)
-.venv/bin/python -m pipeline roommatesfromhell --vs-persona CODF
+# Force a specific opponent persona
+.venv/bin/python -m pipeline --title "..." --vs-persona CODF
 
-# Skip image generation
-.venv/bin/python -m pipeline roommatesfromhell --no-image
+# With image generation
+.venv/bin/python -m pipeline --title "..." --image
+
+# With TTS audio
+.venv/bin/python -m pipeline --title "..." --tts
+
+# Full run
+.venv/bin/python -m pipeline --subreddit roommatesfromhell --limit 5 --image --tts
 ```
 
-### Output
+## Output structure
 
-Each post gets its own folder under `output/<post_id>/`:
+**Per post/story** (`output/<post_id or slug>/`):
 
 | File | Contents |
 |------|----------|
-| `transcript.txt` | 2-person dialogue script, each character labeled with persona + tagline |
-| `meta.json` | post ID, title, classified persona, reasoning, permalink |
-| `pillow_fight_XXXX_vs_YYYY.png` | generated thumbnail — both avatars fighting in a messy room |
+| `post.json` | Reddit title, author, score, permalink, body, all comments (Reddit mode only) |
+| `meta.json` | Classified persona, opponent persona, reasoning |
+| `transcript.json` | Dialogue lines — `{"speaker": "A"/"B", "text": "..."}` — ready for ElevenLabs |
+| `dialogue.mp3` | Stitched TTS audio (if `--tts`) |
+
+**Images** (`animal_images/<A>_vs_<B>/`):
+
+| File | Contents |
+|------|----------|
+| `<A>_vs_<B>.png` | Pillow fight scene generated using both avatar PNGs as style references |
 
 ## Scraper only
 
-To just scrape Reddit posts to CSV (no classification):
-
 ```bash
 .venv/bin/python -m reddit_scraper roommatesfromhell --limit 25
-.venv/bin/python -m reddit_scraper roommates --sort top --time-filter month --no-comments
 ```
 
 Output: `output/posts.csv` and `output/comments.csv`.

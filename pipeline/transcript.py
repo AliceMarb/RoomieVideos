@@ -31,7 +31,7 @@ class Transcript:
             {
                 "persona_a": self.persona_a,
                 "persona_b": self.persona_b,
-                "lines": [asdict(l) for l in self.lines],
+                "lines": [{"speaker": l.speaker, "text": l.text} for l in self.lines],
             },
             indent=2,
         )

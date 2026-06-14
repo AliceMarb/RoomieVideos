@@ -109,9 +109,9 @@ def _process(
         print(f"  Audio → {audio_path}")
 
     if args.image:
-        fight_name = f"pillow_fight_{classification.code}_vs_{vs}"
+        fight_name = f"{classification.code}_vs_{vs}"
         image_path = Path("animal_images") / fight_name / f"{fight_name}.png"
-        print(f"Generating pillow fight image...", end=" ", flush=True)
+        print(f"Generating image...", end=" ", flush=True)
         generate_pillow_fight_image(classification.code, vs, image_path, client=client)
         print(f"done → {image_path}")
 
@@ -140,14 +140,28 @@ def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
 
     for post in posts:
         body = fetch_post_selftext(post.permalink) if not post.selftext else post.selftext
-        _process(
-            post.title,
-            body,
-            post.permalink,
-            args.output / post.post_id,
-            args,
-            client,
+        comments = fetch_comments(post.post_id, args.subreddit)
+        out_dir = args.output / post.post_id
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        (out_dir / "post.json").write_text(
+            json.dumps({
+                "post_id": post.post_id,
+                "title": post.title,
+                "author": post.author,
+                "score": post.score,
+                "permalink": post.permalink,
+                "body": body,
+                "comments": [
+                    {"author": c.author, "score": c.score, "body": c.body}
+                    for c in sorted(comments, key=lambda c: -c.score)
+                ],
+            }, indent=2),
+            encoding="utf-8",
         )
+        print(f"  Post saved → {out_dir}/post.json ({len(comments)} comments)")
+
+        _process(post.title, body, post.permalink, out_dir, args, client)
 
 
 def main(argv: list[str] | None = None) -> None:
