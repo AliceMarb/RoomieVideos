@@ -1,49 +1,74 @@
 # RoomieVideos
 
-Crazy funny videos with HMTI classification.
+Scrapes Reddit roommate posts, classifies the poster into an HMTI persona, and generates a split-screen video transcript + pillow fight thumbnail.
 
-## Reddit Scraper
+## Pipeline
 
-Scrape posts and comments from Reddit subreddits to CSV files.
+```
+Reddit post → HMTI persona classification → 2-person dialogue transcript → pillow fight image
+```
 
-### Setup
+**Tools used:**
+- **Reddit:** [PRAW](https://praw.readthedocs.io/) (Python Reddit API Wrapper) — official Reddit API, read-only
+- **Classification + transcript:** OpenAI `gpt-4o-mini` (classify) and `gpt-4o` (dialogue)
+- **Image generation:** OpenAI `gpt-image-1` at medium quality
+- **Avatars:** 32 HMTI persona PNGs from RoomieScout
 
-1. **Install dependencies:**
+## Setup
+
+1. **Create and activate the virtual environment:**
    ```bash
-   pip install -e .
+   python3.11 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
    ```
 
-2. **Get Reddit API credentials:**
-   - Go to https://www.reddit.com/prefs/apps
-   - Click "create another app"
-   - Select "script" as the app type
-   - Note the `client_id` (under the app name) and `client_secret`
-
-3. **Configure credentials:**
+2. **Configure credentials** — copy `.env` and fill in the Reddit keys:
    ```bash
-   cp .env.example .env
+   # .env already has the OpenAI key
+   # Add your Reddit API credentials:
+   REDDIT_CLIENT_ID=...
+   REDDIT_CLIENT_SECRET=...
    ```
-   Edit `.env` with your `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET`.
 
-### Usage
+   Get Reddit credentials at https://www.reddit.com/prefs/apps — create a "script" app.
+
+## Run the pipeline
 
 ```bash
-# Scrape 25 hot posts (+ comments) from a subreddit
-python -m reddit_scraper funny
+# Scrape r/roommatesfromhell, classify top 10 posts, generate transcripts + images
+.venv/bin/python -m pipeline roommatesfromhell --limit 10
 
-# Multiple subreddits, custom limit
-python -m reddit_scraper funny videos memes --limit 50
+# Use a specific sort
+.venv/bin/python -m pipeline roommates --sort top --time-filter week --limit 5
 
-# Top posts from the past month, no comments
-python -m reddit_scraper wallstreetbets --sort top --time-filter month --no-comments
+# Single post by ID
+.venv/bin/python -m pipeline roommatesfromhell --post-id abc123
 
-# Custom output directory
-python -m reddit_scraper python --output ./data --limit 10
+# Set the "opponent" persona manually (otherwise picks natural opposite)
+.venv/bin/python -m pipeline roommatesfromhell --vs-persona CODF
+
+# Skip image generation
+.venv/bin/python -m pipeline roommatesfromhell --no-image
 ```
 
 ### Output
 
-Two CSV files are created in the output directory (default: `./output/`):
+Each post gets its own folder under `output/<post_id>/`:
 
-- **posts.csv** — post ID, subreddit, title, author, score, upvote ratio, comment count, timestamp, URL, selftext, is_video, permalink
-- **comments.csv** — comment ID, post ID, subreddit, author, body, score, timestamp, parent ID, depth
+| File | Contents |
+|------|----------|
+| `transcript.txt` | 2-person dialogue script, each character labeled with persona + tagline |
+| `meta.json` | post ID, title, classified persona, reasoning, permalink |
+| `pillow_fight_XXXX_vs_YYYY.png` | generated thumbnail — both avatars fighting in a messy room |
+
+## Scraper only
+
+To just scrape Reddit posts to CSV (no classification):
+
+```bash
+.venv/bin/python -m reddit_scraper roommatesfromhell --limit 25
+.venv/bin/python -m reddit_scraper roommates --sort top --time-filter month --no-comments
+```
+
+Output: `output/posts.csv` and `output/comments.csv`.

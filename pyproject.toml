@@ -5,9 +5,12 @@ description = "Scrape posts and comments from Reddit subreddits"
 requires-python = ">=3.10"
 dependencies = [
     "beautifulsoup4>=4.12,<5",
+    "openai>=1.30,<2",
+    "pydub>=0.25,<1",
     "python-dotenv>=1.0,<2",
     "requests>=2.31,<3",
 ]
 
 [project.scripts]
 reddit-scraper = "reddit_scraper.cli:main"
+roomie-pipeline = "pipeline.cli:main"
