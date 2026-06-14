@@ -73,7 +73,7 @@ Write the live argument. 60–75 words, ~30 seconds when read aloud.
 - Lines are very short and snappy (1–2 sentences max), rapid fire
 - NEVER use the other person's name or refer to them as "A" or "B" — speak directly without addressing them by any name
 - AUDIO ONLY: the audience cannot see anything. Every line must make sense with ears alone — no references to things only visible in the room
-- FIRST LINE must be punchy, funny, and high-energy — hook the listener immediately while making the problem crystal clear. Attitude first. (e.g. "Your dog turned my bathroom into a CRIME SCENE — again!" not "Your dog trashed the bathroom and it's never outside.")
+- FIRST LINE must be a direct accusation: state exactly what the other person did wrong, with anger and energy. NOT a question, NOT a metaphor, NOT a joke — a clear statement of the problem. (e.g. "Your cat has turned this apartment into a BIOHAZARD and you don't even care!" not "Did a cheese factory explode in your room?")
 - Structure: HOOK (line 1) → REAL ANGRY FIGHT (lines 2–10) → PUNCHLINE (final 1–2 lines)
 - The middle must be REAL conflict — frustrated, specific, escalating. People defending themselves and saying what they actually mean. NOT jokes.
 - The personality clash between A and B IS the comedy — you do not need to write jokes in the middle. Real people fighting with clashing personalities is naturally funny.
