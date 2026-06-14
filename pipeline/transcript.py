@@ -76,12 +76,8 @@ Write the live argument. 60–75 words, ~30 seconds when read aloud.
 - Each character's personality makes their arguing style totally different and clash hilariously
 - End with a killer line, a dramatic exit, or an absurd mic-drop moment
 
-Return ONLY a JSON array — no markdown, no explanation:
-[
-  {{"speaker": "A", "text": "..."}},
-  {{"speaker": "B", "text": "..."}},
-  ...
-]"""
+Return ONLY this exact JSON structure — no markdown, no explanation:
+{{"lines": [{{"speaker": "A", "text": "..."}}, {{"speaker": "B", "text": "..."}}, ...]}}"""
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -93,12 +89,17 @@ Return ONLY a JSON array — no markdown, no explanation:
     raw = response.choices[0].message.content.strip()
     data = json.loads(raw)
 
-    # model may wrap in a key or return array directly
-    if isinstance(data, dict):
-        data = next(iter(data.values()))
+    # normalise — model should return {"lines": [...]} but handle variations
+    if isinstance(data, list):
+        items = data
+    elif "lines" in data:
+        items = data["lines"]
+    else:
+        # grab the first list value
+        items = next(v for v in data.values() if isinstance(v, list))
 
     lines = []
-    for item in data:
+    for item in items:
         speaker = item["speaker"].upper()
         code = code_a if speaker == "A" else code_b
         meta = meta_a if speaker == "A" else meta_b

@@ -61,7 +61,7 @@ Return ONLY valid JSON with this shape:
     data = json.loads(response.choices[0].message.content)
     code = data["code"].upper()
 
-    if code not in PERSONA_META:
+    if code not in PERSONAS:
         raise ValueError(f"Model returned unknown persona code: {code}")
 
     return ClassificationResult(code=code, reasoning=data.get("reasoning", ""))
