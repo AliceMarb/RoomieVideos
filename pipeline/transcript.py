@@ -70,11 +70,12 @@ The situation:
 {selftext or ""}
 
 Write the live argument. 60–75 words, ~30 seconds when read aloud.
-- This is the active dispute — they are fighting RIGHT NOW
-- Dramatic and funny — think reality TV confrontation energy
-- Lines are very short and snappy (1–2 sentences max), rapid fire
-- Each character's personality makes their arguing style totally different and clash hilariously
-- End with a killer line, a dramatic exit, or an absurd mic-drop moment
+- This is the fight happening RIGHT NOW — not a recap
+- Most lines are genuine, realistic argument — frustrated, defensive, cutting
+- Humor comes from the clash of personalities, not from both characters making jokes every line
+- Short lines (1–2 sentences), but let some land flat and real before the next one bites
+- One or two genuinely funny moments is enough — earned, not forced
+- End on something that lands: a real zinger, a door slam line, or a moment of silence
 
 Return ONLY this exact JSON structure — no markdown, no explanation:
 {{"lines": [{{"speaker": "A", "text": "..."}}, {{"speaker": "B", "text": "..."}}, ...]}}"""

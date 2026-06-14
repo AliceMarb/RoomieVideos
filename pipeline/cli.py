@@ -139,9 +139,13 @@ def _run_reddit(args: argparse.Namespace, client: OpenAI) -> None:
     print(f"Found {len(posts)} posts.\n")
 
     for post in posts:
+        out_dir = args.output / post.post_id
+        if (out_dir / "transcript.json").exists():
+            print(f"  Skipping {post.post_id} — already processed ({out_dir}/transcript.json exists)")
+            continue
+
         body = fetch_post_selftext(post.permalink) if not post.selftext else post.selftext
         comments = fetch_comments(post.post_id, args.subreddit)
-        out_dir = args.output / post.post_id
         out_dir.mkdir(parents=True, exist_ok=True)
 
         (out_dir / "post.json").write_text(
