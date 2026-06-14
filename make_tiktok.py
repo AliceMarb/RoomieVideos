@@ -1,4 +1,5 @@
 import argparse
+import json
 import subprocess
 import sys
 import tempfile
@@ -6,138 +7,157 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from elevenlabs import text_to_speech
-from soundtrack import _get_video_duration
+from pipeline.card_gen import generate_card_pair
+from pipeline.tts import render_transcript
+from pipeline.transcript import Transcript
 
 load_dotenv()
 
 WIDTH = 1080
 HEIGHT = 1920
-HALF = HEIGHT // 2
 
 
 def _run_ffmpeg(cmd: list[str]) -> None:
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"ffmpeg failed:\n{result.stderr}")
+        raise RuntimeError(f"ffmpeg failed:\n{result.stderr[-2000:]}")
 
 
-def _tts(script: str, output: Path, speed: float) -> float:
-    print("Generating voiceover...")
-    audio = text_to_speech(script, speed=speed)
-    output.write_bytes(audio)
-    duration = _get_video_duration(str(output))
-    print(f"  Audio: {duration:.1f}s")
-    return duration
+def _audio_duration(audio: Path) -> float:
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1", str(audio)],
+        capture_output=True, text=True,
+    )
+    return float(probe.stdout.strip())
 
 
-def _loop_video_with_audio(
-    video: Path, audio: Path, output: Path, duration: float, volume: float
+def _composite(
+    gameplay: Path,
+    fight_video: Path,
+    cards_image: Path,
+    audio: Path,
+    output: Path,
 ) -> None:
-    print("Adding voiceover to content video...")
-    _run_ffmpeg([
-        "ffmpeg",
-        "-stream_loop", "-1", "-i", str(video),
-        "-i", str(audio),
-        "-map", "0:v", "-map", "1:a",
-        "-c:v", "libx264", "-c:a", "aac",
-        "-af", f"volume={volume}",
-        "-t", str(duration),
-        "-shortest",
-        "-y", str(output),
-    ])
+    """
+    Layout (1080x1920):
+      - Full background: gameplay video looping
+      - Top (y=50):  two persona cards, scaled to ~1000px wide
+      - Middle (y=680): fight video looping, scaled to ~960px wide, centred
+    """
+    print("Compositing video...")
+    duration = _audio_duration(audio)
 
+    card_w = WIDTH - 80        # 40px padding each side
+    card_x = 40
+    card_y = 50
 
-def _composite_tiktok(
-    gameplay: Path, content: Path, output: Path, duration: float
-) -> None:
-    print("Compositing TikTok split-screen...")
+    fight_w = int(WIDTH * 0.9)
+    fight_x = (WIDTH - fight_w) // 2
+    fight_y = card_y + 580     # below cards
+
+    filter_complex = (
+        # background: scale gameplay to fill full frame, loop
+        f"[0:v]scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,"
+        f"crop={WIDTH}:{HEIGHT}[bg];"
+
+        # persona cards — scale to card_w wide (static image)
+        f"[1:v]scale={card_w}:-1[cards];"
+
+        # fight video — scale to fight_w wide, loop
+        f"[2:v]scale={fight_w}:-1[fight];"
+
+        # overlay cards on background
+        f"[bg][cards]overlay={card_x}:{card_y}[v1];"
+
+        # overlay fight video
+        f"[v1][fight]overlay={fight_x}:{fight_y}[outv]"
+    )
+
     _run_ffmpeg([
-        "ffmpeg",
-        "-i", str(gameplay),
-        "-stream_loop", "-1", "-i", str(content),
-        "-filter_complex",
-        (
-            f"[1:v]scale={WIDTH}:-1,pad={WIDTH}:{HALF}:(ow-iw)/2:(oh-ih)/2:black[top];"
-            f"[0:v]crop=ih*{WIDTH}/{HALF}:ih,scale={WIDTH}:{HALF}[bot];"
-            f"[top][bot]vstack=inputs=2[outv]"
-        ),
-        "-map", "[outv]", "-map", "1:a",
+        "ffmpeg", "-y",
+        "-stream_loop", "-1", "-i", str(gameplay),    # 0: background video (loops)
+        "-loop", "1", "-i", str(cards_image),          # 1: persona cards (static PNG)
+        "-stream_loop", "-1", "-i", str(fight_video),  # 2: fight video (loops)
+        "-i", str(audio),                              # 3: dialogue audio
+        "-filter_complex", filter_complex,
+        "-map", "[outv]",
+        "-map", "3:a",
         "-c:v", "libx264", "-preset", "fast", "-crf", "20",
-        "-c:a", "aac",
-        "-t", str(duration),
-        "-y", str(output),
+        "-c:a", "aac", "-b:a", "192k",
+        "-t", str(duration + 0.5),
+        "-shortest",
+        str(output),
     ])
 
 
 def make_tiktok(
-    script: str,
-    content_video: str,
-    gameplay_video: str,
-    output_path: str,
-    *,
-    speed: float = 1.3,
-    volume: float = 1.0,
+    transcript_path: Path,
+    fight_video: Path,
+    gameplay_video: Path,
+    output_path: Path,
 ) -> Path:
-    content = Path(content_video)
-    gameplay = Path(gameplay_video)
-    output = Path(output_path)
+    if not fight_video.exists():
+        raise FileNotFoundError(f"Fight video not found: {fight_video}")
+    if not gameplay_video.exists():
+        raise FileNotFoundError(f"Gameplay video not found: {gameplay_video}")
 
-    if not content.exists():
-        raise FileNotFoundError(f"Content video not found: {content}")
-    if not gameplay.exists():
-        raise FileNotFoundError(f"Gameplay video not found: {gameplay}")
+    data = json.loads(transcript_path.read_text())
+    transcript = Transcript(
+        persona_a=data["persona_a"],
+        persona_b=data["persona_b"],
+        lines=[],
+    )
+    # rebuild lines from JSON
+    from pipeline.transcript import DialogueLine
+    for line in data["lines"]:
+        transcript.lines.append(DialogueLine(
+            speaker=line["speaker"],
+            persona_code=data["persona_a"] if line["speaker"] == "A" else data["persona_b"],
+            persona_title="",
+            text=line["text"],
+        ))
 
-    output.parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_dir = Path(tmp)
-        voice_mp3 = tmp_dir / "voice.mp3"
-        content_with_audio = tmp_dir / "content_voiced.mp4"
 
-        duration = _tts(script, voice_mp3, speed)
-        _loop_video_with_audio(content, voice_mp3, content_with_audio, duration, volume)
-        _composite_tiktok(gameplay, content_with_audio, output, duration)
+        # Generate persona cards
+        print("Generating persona cards...")
+        cards_img = tmp_dir / "cards.png"
+        generate_card_pair(transcript.persona_a, transcript.persona_b, cards_img)
+        print(f"  Cards: {transcript.persona_a} vs {transcript.persona_b}")
 
-    print(f"Done: {output}")
-    return output
+        # Render TTS audio
+        print("Rendering dialogue audio...")
+        audio_path = tmp_dir / "dialogue.mp3"
+        render_transcript(transcript, audio_path)
+
+        # Composite final video
+        _composite(gameplay_video, fight_video, cards_img, audio_path, output_path)
+
+    print(f"Done → {output_path}")
+    return output_path
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate a TikTok-style split-screen video with AI voiceover"
+        description="Compose final TikTok video: persona cards + fight image over gameplay"
     )
-
-    script_group = parser.add_mutually_exclusive_group(required=True)
-    script_group.add_argument("--script", type=Path, help="Path to script text file")
-    script_group.add_argument("--script-text", help="Inline script text")
-
-    parser.add_argument("--content-video", required=True, help="Path to content/top video")
-    parser.add_argument("--gameplay-video", required=True, help="Path to gameplay/bottom video")
-    parser.add_argument("-o", "--output", default="output/tiktok.mp4", help="Output path (default: output/tiktok.mp4)")
-    parser.add_argument("--speed", type=float, default=1.3, help="TTS speed (default: 1.3)")
-    parser.add_argument("--volume", type=float, default=1.0, help="Voice volume (default: 1.0)")
+    parser.add_argument("--transcript", type=Path, required=True,
+                        help="Path to transcript.json (from pipeline output/<post_id>/)")
+    parser.add_argument("--fight-video", type=Path, required=True,
+                        help="Path to fight video (e.g. from animal_videos/)")
+    parser.add_argument("--gameplay", type=Path, required=True,
+                        help="Path to gameplay background video (e.g. Minecraft .mp4)")
+    parser.add_argument("-o", "--output", type=Path, default=Path("output/tiktok.mp4"))
 
     args = parser.parse_args()
 
-    if args.script:
-        if not args.script.exists():
-            print(f"Error: Script file not found: {args.script}", file=sys.stderr)
-            sys.exit(1)
-        script = args.script.read_text().strip()
-    else:
-        script = args.script_text
-
     try:
-        make_tiktok(
-            script,
-            args.content_video,
-            args.gameplay_video,
-            args.output,
-            speed=args.speed,
-            volume=args.volume,
-        )
-    except (FileNotFoundError, RuntimeError, EnvironmentError) as e:
+        make_tiktok(args.transcript, args.fight_video, args.gameplay, args.output)
+    except (FileNotFoundError, RuntimeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

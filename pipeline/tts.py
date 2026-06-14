@@ -15,8 +15,8 @@ from .transcript import Transcript
 # Configure two voices via env vars, with ElevenLabs defaults as fallback.
 # ELEVENLABS_VOICE_A — speaker A (the classified persona)
 # ELEVENLABS_VOICE_B — speaker B (the opponent persona)
-_DEFAULT_VOICE_A = "JBFqnCBsd6RMkjVDRZzb"  # George
-_DEFAULT_VOICE_B = "21m00Tcm4TlvDq8ikWAM"  # Rachel
+_DEFAULT_VOICE_A = "pNInz6obpgDQGcFmaJgB"  # Adam (pre-made, free tier)
+_DEFAULT_VOICE_B = "EXAVITQu4vr4xnSDxMaL"  # Bella (pre-made, free tier)
 
 _PAUSE_MS = 300  # silence between lines
 
