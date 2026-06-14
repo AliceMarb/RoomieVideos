@@ -4,9 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-from .scraper import create_reddit_instance, fetch_comments, fetch_posts
+from .scraper import fetch_comments, fetch_posts
 from .writer import write_comments, write_posts
 
 
@@ -53,14 +51,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> None:
-    load_dotenv()
     args = parse_args(argv)
-
-    try:
-        reddit = create_reddit_instance()
-    except ValueError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
 
     total_posts = 0
     total_comments = 0
@@ -69,7 +60,6 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Scraping r/{subreddit_name} ({args.sort}, limit={args.limit})...")
 
         posts = fetch_posts(
-            reddit,
             subreddit_name,
             sort=args.sort,
             limit=args.limit,
@@ -82,12 +72,12 @@ def main(argv: list[str] | None = None) -> None:
         if not args.no_comments:
             subreddit_comments = 0
             for i, post in enumerate(posts, 1):
-                comments = fetch_comments(reddit, post.post_id, subreddit_name)
-                write_comments(comments, args.output)
+                comments = fetch_comments(post.post_id, subreddit_name)
                 subreddit_comments += len(comments)
                 print(
                     f"  [{i}/{len(posts)}] {len(comments)} comments from: {post.title[:60]}"
                 )
+            write_comments(comments, args.output)
             total_comments += subreddit_comments
             print(f"  {subreddit_comments} total comments from r/{subreddit_name}")
 
