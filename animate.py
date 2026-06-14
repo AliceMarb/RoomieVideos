@@ -10,7 +10,7 @@ from google.genai import types
 
 load_dotenv()
 
-VEO_MODEL = "veo-3.1-generate-preview"
+DEFAULT_VEO_MODEL = "veo-3.1-fast-generate-preview"
 POLL_INTERVAL = 10
 
 
@@ -28,6 +28,7 @@ def animate(
     *,
     duration: int = 8,
     aspect_ratio: str = "9:16",
+    model: str | None = None,
 ) -> Path:
     image_file = Path(image_path)
     output = Path(output_path)
@@ -40,9 +41,10 @@ def animate(
     client = _client()
     image = types.Image.from_file(location=str(image_file))
 
-    print(f"Starting video generation ({duration}s, {aspect_ratio})...")
+    veo_model = model or DEFAULT_VEO_MODEL
+    print(f"Starting video generation ({veo_model}, {duration}s, {aspect_ratio})...")
     operation = client.models.generate_videos(
-        model=VEO_MODEL,
+        model=veo_model,
         prompt=prompt,
         image=image,
         config=types.GenerateVideosConfig(
@@ -70,11 +72,12 @@ def main() -> None:
     parser.add_argument("-o", "--output", default="output/animated.mp4", help="Output video path")
     parser.add_argument("--duration", type=int, choices=[4, 6, 8], default=8, help="Video duration in seconds (default: 8)")
     parser.add_argument("--aspect-ratio", choices=["16:9", "9:16"], default="9:16", help="Aspect ratio (default: 9:16)")
+    parser.add_argument("--model", default=None, help="Veo model ID (default: veo-3.1-fast-generate-preview)")
 
     args = parser.parse_args()
 
     try:
-        animate(args.image, args.prompt, args.output, duration=args.duration, aspect_ratio=args.aspect_ratio)
+        animate(args.image, args.prompt, args.output, duration=args.duration, aspect_ratio=args.aspect_ratio, model=args.model)
     except (EnvironmentError, FileNotFoundError, RuntimeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
